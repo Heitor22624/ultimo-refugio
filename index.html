@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Último Refúgio — Protótipo</title>
+<style>
+:root{--bg:#101820;--panel:#1b2832;--line:#344754;--txt:#edf4f4;--muted:#a8bbc4;--accent:#d6e86b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:14px system-ui,Segoe UI,sans-serif;display:grid;grid-template-columns:300px 1fr;height:100vh;overflow:hidden}
+aside{background:var(--panel);border-right:1px solid var(--line);padding:16px;overflow:auto}h1{font-size:20px;margin:0 0 4px}h2{font-size:14px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:18px 0 8px}.sub{color:var(--muted);font-size:12px;line-height:1.5}label{display:block;color:var(--muted);font-size:12px;margin:12px 0 5px}select,button{font:inherit;color:var(--txt);background:#253844;border:1px solid #425864;border-radius:8px;padding:10px;width:100%}button{cursor:pointer;text-align:left;margin:4px 0}button:hover,button.active{border-color:var(--accent);background:#334432}button:disabled{opacity:.4;cursor:not-allowed}.stats{display:grid;grid-template-columns:1fr 1fr;gap:7px}.stat{background:#121e26;border:1px solid var(--line);padding:9px;border-radius:8px}.stat b{display:block;font-size:19px}.stat span{font-size:11px;color:var(--muted)}.tools{display:grid;grid-template-columns:1fr 1fr;gap:6px}.tools button{font-size:12px;min-height:52px}.hint{font-size:12px;line-height:1.5;color:var(--muted);background:#121e26;border-radius:8px;padding:10px;margin-top:10px}main{position:relative;min-width:0}canvas{display:block;width:100%;height:100%;cursor:crosshair;background:#18252b}.top{position:absolute;top:14px;left:14px;right:14px;display:flex;justify-content:space-between;gap:10px;pointer-events:none}.pill{background:#101820dc;border:1px solid #52636c;border-radius:999px;padding:9px 12px;font-size:12px}.toast{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);background:#101820ee;border:1px solid #52636c;border-radius:9px;padding:10px 15px;pointer-events:none;max-width:90%;text-align:center}.legend{position:absolute;bottom:16px;right:14px;background:#101820df;border:1px solid #52636c;border-radius:10px;padding:10px;font-size:11px;color:#cfdbdf;line-height:1.7}.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}@media(max-width:760px){body{grid-template-columns:230px 1fr}aside{padding:10px}.top{top:7px;left:7px}.pill{font-size:10px;padding:7px}.legend{display:none}}@media(max-width:520px){body{grid-template-columns:1fr;grid-template-rows:40vh 60vh}aside{grid-row:2;border:0;border-top:1px solid var(--line)}main{grid-row:1}.tools{grid-template-columns:repeat(4,1fr)}.tools button{padding:5px;font-size:10px}}
+</style></head><body>
+<aside>
+<h1>🧟 Último Refúgio</h1><div class="sub">Protótipo jogável • Gerenciamento de sobrevivência</div>
+<label for="place">Região inicial</label><select id="place"><option value="maringa">Maringá, Brasil</option><option value="saopaulo">São Paulo, Brasil</option><option value="tokyo">Tóquio, Japão</option><option value="newyork">Nova York, EUA</option><option value="london">Londres, Reino Unido</option></select>
+<button id="reset">↻ Iniciar nova partida nesta região</button>
+<h2>Estado do refúgio</h2><div class="stats">
+<div class="stat"><b id="pop">12</b><span>Sobreviventes</span></div><div class="stat"><b id="day">1</b><span>Dia</span></div>
+<div class="stat"><b id="food">80</b><span>Comida</span></div><div class="stat"><b id="water">80</b><span>Água</span></div>
+<div class="stat"><b id="wood">55</b><span>Madeira</span></div><div class="stat"><b id="scrap">35</b><span>Sucata</span></div>
+</div>
+<h2>Construir</h2><div class="tools" id="tools">
+<button data-build="shelter">🏚️ Abrigo<br>18 madeira</button><button data-build="farm">🌱 Horta<br>12 madeira</button>
+<button data-build="well">💧 Poço<br>15 sucata</button><button data-build="wall">🧱 Muralha<br>10 madeira</button>
+<button data-build="tower">🔭 Torre<br>12 madeira + 8 sucata</button><button data-build="scavenge">📦 Buscar recursos<br>Equipe 1 dia</button>
+<button data-build="clear">🪓 Limpar terreno<br>remover obstáculo</button><button data-build="select">🖱️ Selecionar<br>Inspecionar</button>
+</div>
+<h2>Passagem do tempo</h2><button id="next">▶ Avançar 1 dia</button><button id="save">💾 Salvar partida</button><button id="load">📂 Carregar partida</button>
+<div class="hint" id="report">Estabeleça o refúgio. Selecione uma construção e clique em um terreno vazio.</div>
+<div class="hint"><b>Controles</b><br>• Clique no terreno para construir/inspecionar<br>• Arraste para mover a câmera<br>• Scroll para zoom<br>• Espaço: avançar dia<br><br><b>Nota:</b> os nomes são regiões reais; este protótipo usa mapas de jogo ilustrativos inspirados em ambientes urbanos, ainda não dados cartográficos/satélite reais.</div>
+</aside>
+<main><canvas id="game"></canvas><div class="top"><div class="pill" id="location">📍 Maringá, Brasil</div><div class="pill" id="threat">☠ Ameaça: baixa</div></div><div class="legend"><span class="dot" style="background:#77956a"></span>Terreno <span class="dot" style="background:#b4a17b"></span>Estrada<br><span class="dot" style="background:#c9bda5"></span>Construção <span class="dot" style="background:#a8463f"></span>Zumbis</div><div class="toast" id="toast">Escolha uma construção para começar.</div></main>
+<script>
+(()=> {
+const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
+const N=28; let tiles=[], buildings=[], zombies=[], selectedTool='select', day=1,pop=12,food=80,water=80,wood=55,scrap=35,threat=1,cam={x:0,y:0,zoom:1},drag=null,hover=null;
+const regions={maringa:{name:'Maringá, Brasil',seed:12},saopaulo:{name:'São Paulo, Brasil',seed:35},tokyo:{name:'Tóquio, Japão',seed:51},newyork:{name:'Nova York, EUA',seed:76},london:{name:'Londres, Reino Unido',seed:94}};
+let region='maringa';
+function rand(n){let x=Math.sin(n*127.1+19.19)*43758.5453;return x-Math.floor(x)}
+function init(){region=document.getElementById('place').value;let seed=regions[region].seed;tiles=[];buildings=[];zombies=[];day=1;pop=12;food=80;water=80;wood=55;scrap=35;threat=1;
+for(let y=0;y<N;y++){let row=[];for(let x=0;x<N;x++){let r=rand(seed+x*71+y*173),kind='grass';if(r>.91)kind='tree';if(r<.035)kind='rock';if((x===13||y===14)&&rand(seed+x*11+y*7)>.18)kind='road';if((x-7)**2+(y-7)**2<8)kind='grass';row.push({kind});}tiles.push(row)}
+// Starting compound
+for(let [x,y,type] of [[7,7,'shelter'],[8,7,'farm']]){tiles[y][x].kind='built';buildings.push({x,y,type,hp:100})}
+for(let i=0;i<7;i++){let x=Math.floor(rand(seed+i*9)*N),y=Math.floor(rand(seed+i*19)*N);if(tiles[y][x].kind==='grass')zombies.push({x,y})}
+cam.x=0;cam.y=0;cam.zoom=1;selectedTool='select';document.querySelectorAll('.tools button').forEach(b=>b.classList.toggle('active',b.dataset.build==='select'));document.getElementById('location').textContent='📍 '+regions[region].name;report('Seu refúgio inicial está montado. Construa, busque recursos e cuide dos sobreviventes.');update();draw();}
+function report(s){document.getElementById('report').textContent=s;document.getElementById('toast').textContent=s}
+function update(){for(let id of ['pop','day','food','water','wood','scrap'])document.getElementById(id).textContent=({pop,day,food,water,wood,scrap})[id];document.getElementById('threat').textContent='☠ Ameaça: '+(threat<3?'baixa':threat<6?'moderada':'alta');document.getElementById('next').textContent='▶ Avançar 1 dia';}
+function dims(){let w=canvas.clientWidth,h=canvas.clientHeight,dpr=window.devicePixelRatio||1;if(canvas.width!==Math.floor(w*dpr)||canvas.height!==Math.floor(h*dpr)){canvas.width=Math.floor(w*dpr);canvas.height=Math.floor(h*dpr)}ctx.setTransform(dpr,0,0,dpr,0,0);return {w,h}}
+function size(){let {w,h}=dims();return {w,h,tw:36*cam.zoom,th:19*cam.zoom}}
+function point(x,y){let {w,h,tw,th}=size();return {x:w/2+cam.x+(x-y)*tw/2,y:h/2+cam.y+(x+y)*th/2}}
+function draw(){let {w,h,tw,th}=size();ctx.clearRect(0,0,w,h);ctx.fillStyle='#18252b';ctx.fillRect(0,0,w,h);
+let order=[];for(let y=0;y<N;y++)for(let x=0;x<N;x++)order.push([x,y]);order.sort((a,b)=>a[0]+a[1]-b[0]-b[1]);
+for(let [x,y] of order){let p=point(x,y),t=tiles[y][x],color=t.kind==='grass'?(rand(x*13+y*31+regions[region].seed)>.5?'#718d63':'#789568'):t.kind==='road'?'#b1a080':t.kind==='tree'?'#42664b':t.kind==='rock'?'#687780':'#789568';
+ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p.x+tw/2,p.y+th/2);ctx.lineTo(p.x,p.y+th);ctx.lineTo(p.x-tw/2,p.y+th/2);ctx.closePath();ctx.fillStyle=color;ctx.fill();ctx.strokeStyle='#253c34';ctx.lineWidth=.5;ctx.stroke();
+if(t.kind==='tree'){ctx.fillStyle='#34553e';ctx.beginPath();ctx.arc(p.x,p.y+th*.24,tw*.19,0,Math.PI*2);ctx.fill();ctx.fillStyle='#6a5039';ctx.fillRect(p.x-2,p.y+th*.25,4,th*.35)}
+if(t.kind==='rock'){ctx.fillStyle='#9aa5a6';ctx.beginPath();ctx.moveTo(p.x-tw*.16,p.y+th*.52);ctx.lineTo(p.x-tw*.09,p.y+th*.15);ctx.lineTo(p.x+tw*.13,p.y+th*.28);ctx.lineTo(p.x+tw*.18,p.y+th*.58);ctx.closePath();ctx.fill()}
+let b=buildings.find(b=>b.x===x&&b.y===y);if(b){ctx.fillStyle=b.type==='farm'?'#547c47':b.type==='wall'?'#929c9e':b.type==='tower'?'#7d898d':'#b6a58b';ctx.fillRect(p.x-tw*.19,p.y-th*.35,tw*.38,th*.78);ctx.fillStyle='#d6c5a7';ctx.beginPath();ctx.moveTo(p.x-tw*.23,p.y-th*.35);ctx.lineTo(p.x,p.y-th*.72);ctx.lineTo(p.x+tw*.23,p.y-th*.35);ctx.closePath();ctx.fill();if(b.type==='farm'){ctx.strokeStyle='#c0d87b';for(let i=-2;i<=2;i++){ctx.beginPath();ctx.moveTo(p.x+i*3,p.y+1);ctx.lineTo(p.x+i*3,p.y+th*.28);ctx.stroke()}}if(b.type==='wall'){ctx.fillStyle='#b8c1c3';for(let k=-2;k<=2;k++)ctx.fillRect(p.x+k*4-2,p.y-th*.38,3,4)}}
+if(hover&&hover.x===x&&hover.y===y){ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p.x+tw/2,p.y+th/2);ctx.lineTo(p.x,p.y+th);ctx.lineTo(p.x-tw/2,p.y+th/2);ctx.closePath();ctx.fillStyle='#e5f58a55';ctx.fill();ctx.strokeStyle='#e5f58a';ctx.lineWidth=2;ctx.stroke()}
+}
+for(let z of zombies){let p=point(z.x,z.y);ctx.fillStyle='#a8463f';ctx.beginPath();ctx.arc(p.x,p.y+th*.34,Math.max(3,5*cam.zoom),0,Math.PI*2);ctx.fill();ctx.fillStyle='#f2d8b0';ctx.fillRect(p.x-3,p.y+th*.3,2,2);ctx.fillRect(p.x+1,p.y+th*.3,2,2)}
+}
+function tileAt(mx,my){let {w,h,tw,th}=size(),best=null,bd=1e9;for(let y=0;y<N;y++)for(let x=0;x<N;x++){let p=point(x,y),dx=(mx-p.x)/(tw/2),dy=(my-(p.y+th/2))/(th/2),d=Math.abs(dx)+Math.abs(dy);if(d<1&&d<bd){bd=d;best={x,y}}}return best}
+function spend(cost){if(cost.wood>wood||cost.scrap>scrap)return false;wood-=cost.wood;scrap-=cost.scrap;return true}
+function clickTile(t){if(!t)return;let cell=tiles[t.y][t.x],existing=buildings.find(b=>b.x===t.x&&b.y===t.y);
+if(selectedTool==='select'){report(existing?'Estrutura: '+existing.type+' • Integridade '+existing.hp+'%.':`Terreno: ${cell.kind}. ${zombies.some(z=>z.x===t.x&&z.y===t.y)?'Há zumbis por perto.':''}`);return}
+if(selectedTool==='scavenge'){food+=Math.floor(5+Math.random()*13);water+=Math.floor(4+Math.random()*10);wood+=Math.floor(3+Math.random()*9);scrap+=Math.floor(2+Math.random()*7);threat+=.35;report('Equipe voltou da busca com recursos. A atividade também atraiu atenção.');selectedTool='select';markTool();update();draw();return}
+if(selectedTool==='clear'){if(['tree','rock'].includes(cell.kind)){cell.kind='grass';wood+=cell.kind==='tree'?3:0;report('Obstáculo removido.');}else report('Não há obstáculo aqui.');draw();update();return}
+if(existing||!['grass','road'].includes(cell.kind)){report('Local ocupado ou inadequado. Escolha um terreno livre.');return}
+let costs={shelter:{wood:18,scrap:0},farm:{wood:12,scrap:0},well:{wood:0,scrap:15},wall:{wood:10,scrap:0},tower:{wood:12,scrap:8}}[selectedTool];if(!costs||!spend(costs)){report('Recursos insuficientes para essa construção.');return}
+buildings.push({x:t.x,y:t.y,type:selectedTool,hp:100});cell.kind='built';report('Construído: '+selectedTool+'.');update();draw();
+}
+function markTool(){document.querySelectorAll('.tools button').forEach(b=>b.classList.toggle('active',b.dataset.build===selectedTool))}
+document.querySelectorAll('.tools button').forEach(b=>b.addEventListener('click',()=>{selectedTool=b.dataset.build;markTool();report(selectedTool==='select'?'Modo inspeção: clique em qualquer terreno.':'Selecionado: '+b.textContent.replace(/\n/g,' ')+'. Clique no terreno para posicionar.')}))
+function advance(){day++;let farms=buildings.filter(b=>b.type==='farm').length,wells=buildings.filter(b=>b.type==='well').length,def=buildings.filter(b=>b.type==='wall'||b.type==='tower').length;food+=farms*8-pop*2;water+=wells*10-pop*2;if(farms===0)food-=4;if(food<0||water<0){pop=Math.max(0,pop-2);food=Math.max(0,food);water=Math.max(0,water)}threat+=.55+Math.random()*.5;
+if(Math.random()<Math.min(.75,threat*.055)){let z={x:Math.floor(Math.random()*N),y:Math.floor(Math.random()*N)};zombies.push(z);let near=buildings.filter(b=>Math.abs(b.x-z.x)+Math.abs(b.y-z.y)<5);if(near.length&&Math.random()>.25){if(def>0){let wall=buildings.find(b=>b.type==='wall'||b.type==='tower');if(wall)wall.hp-=Math.max(4,15-def*2);report('Uma horda atacou as defesas!');}else{pop=Math.max(0,pop-1);report('Zumbis invadiram o perímetro. Um sobrevivente foi perdido.');}}else report('Sinais de zumbis detectados. Reforce as defesas.');}else report('Dia '+day+': consumo atualizado. Planeje o próximo passo.');
+if(food>0&&water>0&&day%4===0&&pop<45){pop++;report('Um sobrevivente se juntou ao refúgio.')}
+update();draw()}
+canvas.addEventListener('mousemove',e=>{let r=canvas.getBoundingClientRect();if(drag){cam.x+=e.clientX-drag.x;cam.y+=e.clientY-drag.y;drag={x:e.clientX,y:e.clientY};draw();return}hover=tileAt(e.clientX-r.left,e.clientY-r.top);draw()});
+canvas.addEventListener('mousedown',e=>{if(e.button===1||e.shiftKey){drag={x:e.clientX,y:e.clientY};e.preventDefault()}});
+canvas.addEventListener('mouseup',()=>drag=null);canvas.addEventListener('mouseleave',()=>{drag=null;hover=null;draw()});
+canvas.addEventListener('click',e=>{if(e.shiftKey||e.button===1)return;let r=canvas.getBoundingClientRect();clickTile(tileAt(e.clientX-r.left,e.clientY-r.top))});
+canvas.addEventListener('wheel',e=>{e.preventDefault();cam.zoom=Math.max(.5,Math.min(1.8,cam.zoom*(e.deltaY<0?1.1:.9)));draw()},{passive:false});
+document.getElementById('next').onclick=advance;document.addEventListener('keydown',e=>{if(e.code==='Space'&&!['SELECT','TEXTAREA'].includes(document.activeElement.tagName)){e.preventDefault();advance()}});
+document.getElementById('place').onchange=()=>{region=document.getElementById('place').value;document.getElementById('location').textContent='📍 '+regions[region].name};
+document.getElementById('reset').onclick=init;
+document.getElementById('save').onclick=()=>{localStorage.setItem('ultimoRefugio',JSON.stringify({region,tiles,buildings,zombies,day,pop,food,water,wood,scrap,threat}));report('Partida salva neste navegador.')};
+document.getElementById('load').onclick=()=>{let s=localStorage.getItem('ultimoRefugio');if(!s){report('Nenhum salvamento encontrado.');return}let a=JSON.parse(s);({region,tiles,buildings,zombies,day,pop,food,water,wood,scrap,threat}=a);document.getElementById('place').value=region;document.getElementById('location').textContent='📍 '+regions[region].name;update();draw();report('Partida carregada.')};
+window.addEventListener('resize',draw);init();
+})();
+</script></body></html>
